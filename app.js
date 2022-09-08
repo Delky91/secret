@@ -4,7 +4,7 @@ const bodyParser = require("body-parser");
 const ejs = require('ejs');
 const mongoose = require("mongoose");
 const { appendFile } = require("fs");
-const encrypt = require("mongoose-encryption");
+const md5 = require('md5');
 
 const app = express();
 
@@ -18,8 +18,6 @@ const userSchema = new mongoose.Schema({
     email: String,
     password: String
 });
-
-userSchema.plugin(encrypt, { secret: process.env.SECRET, encryptedFields: ['password'] });
 
 const User = new mongoose.model("User", userSchema);
 
@@ -39,7 +37,7 @@ app.get("/register", (req, res) => {
 app.post("/register", (req, res) => {
     const newUser = new User({
         email: req.body.username,
-        password: req.body.password
+        password: md5(req.body.password)
     });
     newUser.save((err) => { //cuando se usa el save automaticamente se encriptara la password en una linea binaria dificil de decifrar
         if (err)
@@ -51,8 +49,9 @@ app.post("/register", (req, res) => {
 
 app.post("/login", (req, res) => {
     const username = req.body.username;
-    const password = req.body.password;
-    //al usar find o cualquiera de sus metodos, este desencriptara la clave del usuario para comprarla en caso de encontrarse registrado el usuario
+    const password = md5(req.body.password);
+    console.log(password);
+
     User.findOne({ email: username }, (err, foundUser) => {
         if (err)
             console.log(err);
@@ -70,4 +69,4 @@ app.post("/login", (req, res) => {
 app.listen(3000, () => {
     console.log('Server up, PORT 3000');
 
-})
+});
